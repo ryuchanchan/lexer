@@ -18,7 +18,30 @@ static t_node *make_node()
     return (data);
 }
 
-static t_redirection *make_redirection(t_list *now, t_list *next)
+static int	is_redirection(const char *s)
+{
+	size_t len;
+	if (!s)
+		return (0);
+	len = ft_strlen(s);
+	if (len == 2)
+	{
+		if (ft_strncmp(s, "<<", 2) == 0)
+			return (1);
+		if (ft_strncmp(s, ">>", 2) == 0)
+			return (1);
+	}
+	if (len == 1)
+	{
+		if (ft_strncmp(s, ">", 1) == 0)
+			return (1);
+		if (ft_strncmp(s, "<", 1) == 0)
+			return (1);
+	}
+    return (0);
+}
+
+static t_redirection *make_redirection(t_list *now, t_list **next_p)
 {
     t_redirection *data;
 
@@ -43,34 +66,13 @@ static t_redirection *make_redirection(t_list *now, t_list *next)
     {
         data->type = INPUT;
     }
-    if (next != NULL)
-    {
-        data->filename = next->content;
-    }
-    return (data);
-}
-
-static int	is_redirection(const char *s)
-{
-	size_t len;
-	if (!s)
-		return (0);
-	len = ft_strlen(s);
-	if (len == 2)
-	{
-		if (ft_strncmp(s, "<<", 2) == 0)
-			return (1);
-		if (ft_strncmp(s, ">>", 2) == 0)
-			return (1);
+    if (*next_p != NULL && !is_redirection((*next_p)->content))
+    {  
+        // (*next_p)->contentがリダイレクションの場合syntax errになるべき
+        data->filename = (*next_p)->content;
+		*next_p = (*next_p)->next;
 	}
-	if (len == 1)
-	{
-		if (ft_strncmp(s, ">", 1) == 0)
-			return (1);
-		if (ft_strncmp(s, "<", 1) == 0)
-			return (1);
-	}
-    return (0);
+	return (data);
 }
 
 t_node *parser(t_list *tokens)
@@ -97,8 +99,7 @@ t_node *parser(t_list *tokens)
         }        
         else if (is_redirection((const char *)now->content))
         {
-            ft_lstadd_back(&node->filenames, now);
-
+            ft_lstadd_back(&node->filenames, ft_lstnew(make_redirection(now, &next)));
         }
         else
         {
