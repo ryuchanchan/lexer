@@ -4,7 +4,11 @@ CFLAGS = -Wall -Wextra -Werror -I $(DIR_INCLUDE)
 LIBFT = ./libft/libft.a
 NAME = a.out
 
-SRCS =	./src/main.c
+DIR_SRC = ./src
+
+SRCS =	$(DIR_SRC)/main.c \
+		$(DIR_SRC)/utils.c \
+		$(DIR_SRC)/token.c \
 
 OBJS = $(SRCS:.c=.o)
 
