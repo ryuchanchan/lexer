@@ -29,7 +29,7 @@ re: fclean all
 bonus: $(NAME)
 
 fclean: clean
-	$(RM) liblibft.a
+	$(RM) $(NAME)
 clean:
 	$(RM) $(OBJS) $(B_OBJS)
 
