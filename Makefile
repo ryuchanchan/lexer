@@ -9,6 +9,7 @@ DIR_SRC = ./src
 SRCS =	$(DIR_SRC)/main.c \
 		$(DIR_SRC)/utils.c \
 		$(DIR_SRC)/token.c \
+		$(DIR_SRC)/parser.c
 
 OBJS = $(SRCS:.c=.o)
 
