@@ -10,13 +10,12 @@ typedef enum e_label {
 } t_label;
 
 typedef struct s_node {
-    // struct s_node   *left;
-    // struct s_node   *right;
-    // struct s_node   *parent;
     struct s_node   *next;
     t_label         label;
     t_list          *commands;
     t_list          *filenames;
+    t_list          *pipes;
+
 } t_node;
 
 typedef enum e_redirect_type {
