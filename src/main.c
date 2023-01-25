@@ -1,4 +1,6 @@
 #include "lexer.h"
+#include "unistd.h"
+#include "fcntl.h"
 
 void print_commands(t_list *commands)
 {
@@ -60,26 +62,33 @@ int main()
     t_node  *node;
     size_t  i;
 
-    int pid;
+    t_pid pid;
     int status;
 
     int pipe_fd[2];
+    extern char	**environ;
+    int n;
+    char		filepath[PATH_MAX + 1];
 
 
-    char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
+    // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
+    char *input = "cat sample | grep a";
     list = tokenizer(input);
     head = list;
-    pid = fork();
-    if (pid == 0)
+    
+    // execvp(head, head);
+    pid.pids = fork();
+    if (pid.pids == 0)
     {
         // printf("===== tokenize =====\n");
         while (list != NULL)
         {
-            printf("%s\n", (char*)list->content);
             pipe(pipe_fd);
-            printf("%d", pipe_fd[0]);
+            printf("%s\n", (char*)list->content);
+            execve(filepath, (char**)list->content, environ);
+            // printf("%d", pipe_fd[0]);
+            dup2(pipe_fd[0], 0);
             close(pipe_fd[0]);
-            dup(pipe_fd[1]);
             // make_pipe(list, pipe_fd);
             list = list->next;
         }
@@ -89,18 +98,32 @@ int main()
         i = 0;
         while (node != NULL)
         {
-            printf("node: %zu\n", i);
-            printf("    label: ");
-            if (node->label == COMMAND)
-                printf("COMMAND");
-            if (node->label == PIPE)
-                printf("PIPE");
-            printf("\n");
-            print_commands(node->commands);
-            print_filenames(node->filenames);
+            // printf("node: %zu\n", i);
+            // printf("    label: ");
+            // if (node->label == COMMAND)
+            //     printf("COMMAND");
+            // if (node->label == PIPE)
+            //     printf("PIPE");
+            // printf("\n");
+            // print_commands(node->commands);
+            // print_filenames(node->filenames);
             node = node->next;
             i++;
         }
     }
-    waitpid(pid, &status, 0);
+    else
+    {
+        close(pipe_fd[1]);//closeしないと処理抜けない
+        pipe(pipe_fd);
+        pid.pids = fork();
+        if((pid.pids) == 0)
+        {
+            close(pipe_fd[0]);
+            close(pipe_fd[1]);
+        }
+        n = read(pipe_fd[1], list->content, 4096);
+        write(STDOUT_FILENO, list->content, n);
+    }
+    
+    waitpid(pid.pids, &status, 0);
 }

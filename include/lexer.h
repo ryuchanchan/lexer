@@ -14,7 +14,7 @@ typedef struct s_node {
     t_label         label;
     t_list          *commands;
     t_list          *filenames;
-    t_list          *pipes;
+    // t_list          *pipes;
 
 } t_node;
 
@@ -30,6 +30,10 @@ typedef struct s_redirection {
     char            *filename;
 
 } t_redirection;
+
+typedef struct s_pid {
+    int pids;
+} t_pid;
 
 char	*ft_strndup(char const *s1, size_t n);
 t_list	*tokenizer(char *input);
