@@ -68,7 +68,7 @@ int main()
     int pipe_fd[2];
     extern char	**environ;
     int n;
-    char		filepath[PATH_MAX + 1];
+    char filepath[PATH_MAX + 1];
 
 
     // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
@@ -83,9 +83,9 @@ int main()
         // printf("===== tokenize =====\n");
         while (list != NULL)
         {
-            pipe(pipe_fd);
             printf("%s\n", (char*)list->content);
             execve(filepath, (char**)list->content, environ);
+            pipe(pipe_fd);
             // printf("%d", pipe_fd[0]);
             dup2(pipe_fd[0], 0);
             close(pipe_fd[0]);
