@@ -68,34 +68,37 @@ int main()
     int pipe_fd[2];
     extern char	**environ;
     int n;
-    char filepath[PATH_MAX + 1];
-
-
+    // char filepath[PATH_MAX + 1];
+    char *f = "/bin/cat/";
     // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
     char *input = "cat sample | grep a";
     list = tokenizer(input);
     head = list;
-    
-    // execvp(head, head);
+    i = 0;
     pid.pids = fork();
     if (pid.pids == 0)
     {
         // printf("===== tokenize =====\n");
         while (list != NULL)
         {
+            if (i == 2)
+            {
+                exit(0);
+            }
             printf("%s\n", (char*)list->content);
-            execve(filepath, (char**)list->content, environ);
+            execve(f, pipe_fd[0], environ);
             pipe(pipe_fd);
             // printf("%d", pipe_fd[0]);
             dup2(pipe_fd[0], 0);
             close(pipe_fd[0]);
             // make_pipe(list, pipe_fd);
             list = list->next;
+            i++;
         }
         // printf("===== end tokenize =====\n");
         node = parser(head);
         // printf("===== parser =====\n");
-        i = 0;
+        // i = 0;
         while (node != NULL)
         {
             // printf("node: %zu\n", i);
@@ -108,7 +111,7 @@ int main()
             // print_commands(node->commands);
             // print_filenames(node->filenames);
             node = node->next;
-            i++;
+            // i++;
         }
     }
     else
