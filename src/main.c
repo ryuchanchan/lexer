@@ -69,7 +69,12 @@ int main()
     extern char	**environ;
     int n;
     // char filepath[PATH_MAX + 1];
-    char *f = "/bin/cat/";
+    char *argv[4];
+    argv[0] = "/bin/cat/";
+    argv[1] = "cat";
+    argv[2] = "sample";
+    argv[3] = NULL;
+    execve(argv[0], argv, environ);
     // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
     char *input = "cat sample | grep a";
     list = tokenizer(input);
@@ -81,12 +86,15 @@ int main()
         // printf("===== tokenize =====\n");
         while (list != NULL)
         {
-            if (i == 2)
+            argv[i+1] = (char*)list->content;
+            printf("い%s\n", argv[0]);
+            printf("あ%s\n", argv[i+1]);
+            // execve(argv[0], argv, environ);
+            if (i == 1)
             {
                 exit(0);
             }
-            printf("%s\n", (char*)list->content);
-            execve(f, pipe_fd[0], environ);
+            // printf("%s\n", (char*)list->content);
             pipe(pipe_fd);
             // printf("%d", pipe_fd[0]);
             dup2(pipe_fd[0], 0);
