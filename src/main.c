@@ -138,21 +138,24 @@ int main()
     */
 
     int tmpin = dup(0);
+    printf("tmpin = %d\n", tmpin);
     int tmpout = dup(1);
+     printf("tmpin = %d\n", tmpout);
     int fdin;
     int fdout;
 
     fdin = dup(tmpin);
+    printf("fdin = %d\n", fdin);
     while (node != NULL)
     {
         t_list *commands = node->commands;
         /* Todo:fdinを入力リダイレクション(< or <<)で上書きする処理 */
 
-        dup2(fdin, 0);
+        dup2(fdin, 0);//0to5 
         close(fdin);
         if (node->next != NULL)
         {
-            pipe(pipe_fd);
+            pipe(pipe_fd);//5to6
             fdout = pipe_fd[1];
             fdin = pipe_fd[0];
         } else {
