@@ -12,48 +12,40 @@ void print_commands(t_list *commands)
     }
 }
 
-void print_filenames(t_list *filenames)
+void print_filenames(t_list *filenames, int *fdout)
 {
     t_redirection *redirection;
 
-    printf("    filenames: \n");
+    // printf("    filenames: \n");
     while (filenames != NULL)
     {
         redirection = (t_redirection *)filenames->content;
-        printf("        type: ");
-        if (redirection->type == INPUT)
-            printf("INPUT");
-        if (redirection->type == OUTPUT)
-            printf("OUTPUT");
-        if (redirection->type == APPEND_OUTPUT)
-            printf("APPEND_OUTPUT");
-        if (redirection->type == HEREDOC_INPUT)
-            printf("HEREDOC_INPUT");
-        printf("\n");
+        // printf("        type: ");
+        // if (redirection->type == INPUT)
+        //     printf("INPUT");
+        // if (redirection->type == OUTPUT)
+        //     printf("OUTPUT");
+        // if (redirection->type == APPEND_OUTPUT)
+        //     printf("APPEND_OUTPUT");
+        // if (redirection->type == HEREDOC_INPUT)
+        //     printf("HEREDOC_INPUT");
+        // printf("\n");
+        // printf("        filename: %s\n", (char *)redirection->filename);
 
-        printf("        filename: %s\n", (char *)redirection->filename);
+        // printf("%s\n", (char *)redirection->filename);
         filenames = filenames->next;
+        int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+        if (fd == -1)
+        {
+            perror("open");
+            break ;
+        }
+        //fdoutの中身を変える
+        close(*fdout);
+        *fdout = fd;
+        // dup2(fd, 1);
     }
 }
-
-// int make_pipe(t_list *list, int pipe_fd)
-// {
-//     int i;
-//     int pid;
-
-//     pid = fork()
-//     i = 0;
-//     while (list)
-//     {
-//         if (pid == 0)
-//         {
-//             dup(pipe_fd[1]);
-//             close(pipe_fd[1]);
-//         }
-//         i++;
-//     }
-//     return NULL;
-// }
 
 char    **list_to_array(t_list *list)
 {
@@ -99,8 +91,11 @@ int main()
     // execve(argv[0], argv, environ);
     // perror(argv[0]);
     // exit(1);
+
     // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
-    char *input = "/bin/cat sample | /usr/bin/grep abc| /usr/bin/wc -l";
+    // char *input = "/bin/cat sample > test | /usr/bin/grep abc| /usr/bin/wc -l";
+    char *input = "/bin/cat sample > test1";
+
     list = tokenizer(input);
     head = list;
     // i = 0;
@@ -164,7 +159,9 @@ int main()
             fdout = dup(tmpout);
         }
         /* Todo:fdoutを出力リダイレクション(> or >>)で上書きする処理 */
+        print_filenames(node->filenames, &fdout);
 
+        // print_commands(node->commands);
         dup2(fdout, 1);
         close(fdout);
         
@@ -185,6 +182,7 @@ int main()
         //     printf("PIPE");
         // printf("\n");
         // print_commands(node->commands);
+
         // print_filenames(node->filenames);
         node = node->next;
     // i++;
