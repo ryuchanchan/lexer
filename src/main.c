@@ -15,16 +15,28 @@ void print_commands(t_list *commands)
 void print_filenames(t_list *filenames, int *fdout)
 {
     t_redirection *redirection;
-
     // printf("    filenames: \n");
     while (filenames != NULL)
     {
         redirection = (t_redirection *)filenames->content;
         // printf("        type: ");
-        // if (redirection->type == INPUT)
-        //     printf("INPUT");
-        // if (redirection->type == OUTPUT)
-        //     printf("OUTPUT");
+        if (redirection->type == INPUT)
+        {
+            int fd = open((char *)redirection->filename, O_RDONLY);
+            if (fd == -1)
+            {
+                perror("open");
+                break ;
+            }
+            // printf("INPUT");
+        }
+        if (redirection->type == OUTPUT)
+        {
+            int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+            // printf("OUTPUT");
+            close(*fdout);
+            *fdout = fd;
+        }
         // if (redirection->type == APPEND_OUTPUT)
         //     printf("APPEND_OUTPUT");
         // if (redirection->type == HEREDOC_INPUT)
@@ -34,15 +46,15 @@ void print_filenames(t_list *filenames, int *fdout)
 
         // printf("%s\n", (char *)redirection->filename);
         filenames = filenames->next;
-        int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
-        if (fd == -1)
-        {
-            perror("open");
-            break ;
-        }
+        // int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
+        // if (fd == -1)
+        // {
+        //     perror("open");
+        //     break ;
+        // }
         //fdoutの中身を変える
-        close(*fdout);
-        *fdout = fd;
+        // close(*fdout);
+        // *fdout = fd;
         // dup2(fd, 1);
     }
 }
@@ -75,26 +87,19 @@ int main()
     t_list  *head;
     t_list  *list;
     t_node  *node;
-   // size_t  i;
-
     t_pid pid;
     int status;
 
     int pipe_fd[2];
     extern char	**environ;
-    //int n;
-    // char filepath[PATH_MAX + 1];
-    // char *argv[4];
-    // argv[0] = "/bin/cat/";
-    // argv[1] = "sample";
-    // argv[2] = NULL;
-    // execve(argv[0], argv, environ);
-    // perror(argv[0]);
-    // exit(1);
 
     // char *input = "echo \"hello w\"'w | orld' ||  ; cat<<file -l >< file2 -R|wc>>file2";
     // char *input = "/bin/cat sample > test | /usr/bin/grep abc| /usr/bin/wc -l";
-    char *input = "/bin/cat sample > test1";
+    // char *input = "/bin/cat sample > test1";
+    // char *input = "/bin/cat sample >> test1";//この場合open()のflagをappend
+    char *input = "/bin/cat sample < test1";//読み込み専用O_RDONLY エラー処理
+    // char *input = "/bin/cat sample << test1"; pipeを使うかも
+
 
     list = tokenizer(input);
     head = list;
@@ -136,11 +141,8 @@ int main()
     }
     exit(0);
     */
-
     int tmpin = dup(0);
-    printf("tmpin = %d\n", tmpin);
     int tmpout = dup(1);
-     printf("tmpin = %d\n", tmpout);
     int fdin;
     int fdout;
 
@@ -151,11 +153,11 @@ int main()
         t_list *commands = node->commands;
         /* Todo:fdinを入力リダイレクション(< or <<)で上書きする処理 */
 
-        dup2(fdin, 0);//0to5 
+        dup2(fdin, 0);
         close(fdin);
         if (node->next != NULL)
         {
-            pipe(pipe_fd);//5to6
+            pipe(pipe_fd);
             fdout = pipe_fd[1];
             fdin = pipe_fd[0];
         } else {
@@ -185,29 +187,12 @@ int main()
         //     printf("PIPE");
         // printf("\n");
         // print_commands(node->commands);
-
         // print_filenames(node->filenames);
         node = node->next;
-    // i++;
     }
     dup2(tmpin,0);
     dup2(tmpout,1);
     close(tmpin);
     close(tmpout);
-
-    // else
-    // {
-    //     close(pipe_fd[1]);//closeしないと処理抜けない
-    //     pipe(pipe_fd);
-    //     pid.pids = fork();
-    //     if((pid.pids) == 0)
-    //     {
-    //         close(pipe_fd[0]);
-    //         close(pipe_fd[1]);
-    //     }
-    //     n = read(pipe_fd[1], list->content, 4096);
-    //     write(STDOUT_FILENO, list->content, n);
-    // }
-
     waitpid(pid.pids, &status, 0);
 }
