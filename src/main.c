@@ -25,7 +25,7 @@ void print_filenames(t_list *filenames, int *fdout)
             int fd = open((char *)redirection->filename, O_RDONLY);
             if (fd == -1)
             {
-                perror("open");
+                printf("minishell: %s: No such file or directory\n", (char *)redirection->filename);
                 break ;
             }
             // printf("INPUT");
@@ -33,17 +33,24 @@ void print_filenames(t_list *filenames, int *fdout)
         if (redirection->type == OUTPUT)
         {
             int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
-            // printf("OUTPUT");
+            //fdoutの中身を変える
             close(*fdout);
             *fdout = fd;
+            // printf("OUTPUT");
         }
-        // if (redirection->type == APPEND_OUTPUT)
-        //     printf("APPEND_OUTPUT");
-        // if (redirection->type == HEREDOC_INPUT)
-        //     printf("HEREDOC_INPUT");
+        if (redirection->type == APPEND_OUTPUT)
+        {
+            int fd = open((char *)redirection->filename, O_RDWR|O_APPEND|O_CREAT, 0777);
+            close(*fdout);
+            *fdout = fd;
+            // printf("APPEND_OUTPUT");
+        }
+        if (redirection->type == HEREDOC_INPUT)
+        {
+            printf("HEREDOC_INPUT");
+        }
         // printf("\n");
         // printf("        filename: %s\n", (char *)redirection->filename);
-
         // printf("%s\n", (char *)redirection->filename);
         filenames = filenames->next;
         // int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
@@ -97,8 +104,10 @@ int main()
     // char *input = "/bin/cat sample > test | /usr/bin/grep abc| /usr/bin/wc -l";
     // char *input = "/bin/cat sample > test1";
     // char *input = "/bin/cat sample >> test1";//この場合open()のflagをappend
-    char *input = "/bin/cat sample < test1";//読み込み専用O_RDONLY エラー処理
-    // char *input = "/bin/cat sample << test1"; pipeを使うかも
+    // char *input = "/bin/cat sample < test1";//読み込み専用O_RDONLY エラー処理
+    char *input = "/bin/cat sample << test1";//pipeを使うかも
+
+    // char *input = "/bin/cat sample < test1 | /bin/cat sample > test1";//読み込み失敗してファイル書き込む
 
 
     list = tokenizer(input);
@@ -147,12 +156,11 @@ int main()
     int fdout;
 
     fdin = dup(tmpin);
-    printf("fdin = %d\n", fdin);
+    // printf("fdin = %d\n", fdin);
     while (node != NULL)
     {
         t_list *commands = node->commands;
         /* Todo:fdinを入力リダイレクション(< or <<)で上書きする処理 */
-
         dup2(fdin, 0);
         close(fdin);
         if (node->next != NULL)
@@ -165,7 +173,6 @@ int main()
         }
         /* Todo:fdoutを出力リダイレクション(> or >>)で上書きする処理 */
         print_filenames(node->filenames, &fdout);
-
         // print_commands(node->commands);
         dup2(fdout, 1);
         close(fdout);
