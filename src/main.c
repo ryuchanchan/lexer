@@ -1,16 +1,7 @@
 #include "lexer.h"
 #include "unistd.h"
 #include "fcntl.h"
-
-void print_commands(t_list *commands)
-{
-    printf("    commands: \n");
-    while (commands != NULL)
-    {
-        printf("        %s\n", (char*)commands->content);
-        commands = commands->next;
-    }
-}
+#include <readline/readline.h>
 
 void print_filenames(t_list *filenames, int *fdout)
 {
@@ -47,7 +38,24 @@ void print_filenames(t_list *filenames, int *fdout)
         }
         if (redirection->type == HEREDOC_INPUT)
         {
-            printf("HEREDOC_INPUT");
+            int fd = open((char *)redirection->filename, O_RDONLY);
+            // if (fd == -1)
+            // {
+            //     printf("minishell: %s: No such file or directory\n", (char *)redirection->filename);
+            //     break ;
+            // }
+            int i = 0;
+            while ((char *)redirection->filename)
+            {
+                close(*fdout);
+                *fdout = fd;
+                readline(">");
+                pipe(fdout);
+                dup(1);
+                i++;
+            }
+            
+            // printf("HEREDOC_INPUT");
         }
         // printf("\n");
         // printf("        filename: %s\n", (char *)redirection->filename);
@@ -105,7 +113,7 @@ int main()
     // char *input = "/bin/cat sample > test1";
     // char *input = "/bin/cat sample >> test1";//この場合open()のflagをappend
     // char *input = "/bin/cat sample < test1";//読み込み専用O_RDONLY エラー処理
-    char *input = "/bin/cat sample << test1";//pipeを使うかも
+    char *input = "/bin/cat << EOF";
 
     // char *input = "/bin/cat sample < test1 | /bin/cat sample > test1";//読み込み失敗してファイル書き込む
 

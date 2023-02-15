@@ -1,4 +1,4 @@
-# include <stdlib.h>
+#include "lexer.h"
 
 char	*ft_strndup(char const *s1, size_t n)
 {
@@ -16,4 +16,14 @@ char	*ft_strndup(char const *s1, size_t n)
 	}
 	data[i] = '\0';
 	return (data);
+}
+
+void print_commands(t_list *commands)
+{
+    printf("    commands: \n");
+    while (commands != NULL)
+    {
+        printf("        %s\n", (char*)commands->content);
+        commands = commands->next;
+    }
 }

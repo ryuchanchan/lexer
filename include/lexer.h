@@ -36,6 +36,7 @@ typedef struct s_pid {
 } t_pid;
 
 char	*ft_strndup(char const *s1, size_t n);
+void print_commands(t_list *commands);
 t_list	*tokenizer(char *input);
 t_node	*parser(t_list *tokens);
 #endif
