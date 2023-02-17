@@ -45,9 +45,12 @@ void print_filenames(t_list *filenames, int *fdout)
             close(*fdout);
             *fdout = fd;
             pipe(&fd_pipe[2]);
-            while (fd_pipe[1])
+            while (*fdout)
             {
-                write(fd_pipe[1], fdout, 1);
+                if (fd_pipe[1])
+                {
+                    write(fd_pipe[1], fdout, 1);
+                }
             }
             dup2(fd_pipe[0], 0);
             printf("HEREDOC_INPUT");
