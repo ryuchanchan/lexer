@@ -2,10 +2,13 @@
 #include "unistd.h"
 #include "fcntl.h"
 #include <readline/readline.h>
+#include <stdbool.h>
 
 void print_filenames(t_list *filenames, int *fdout)
 {
+    int fd_pipe[2];
     t_redirection *redirection;
+
     // printf("    filenames: \n");
     while (filenames != NULL)
     {
@@ -39,23 +42,15 @@ void print_filenames(t_list *filenames, int *fdout)
         if (redirection->type == HEREDOC_INPUT)
         {
             int fd = open((char *)redirection->filename, O_RDONLY);
-            // if (fd == -1)
-            // {
-            //     printf("minishell: %s: No such file or directory\n", (char *)redirection->filename);
-            //     break ;
-            // }
-            int i = 0;
-            while ((char *)redirection->filename)
+            close(*fdout);
+            *fdout = fd;
+            pipe(&fd_pipe[2]);
+            while (fd_pipe[1])
             {
-                close(*fdout);
-                *fdout = fd;
-                readline(">");
-                pipe(fdout);
-                dup(1);
-                i++;
+                write(fd_pipe[1], fdout, 1);
             }
-            
-            // printf("HEREDOC_INPUT");
+            dup2(fd_pipe[0], 0);
+            printf("HEREDOC_INPUT");
         }
         // printf("\n");
         // printf("        filename: %s\n", (char *)redirection->filename);
