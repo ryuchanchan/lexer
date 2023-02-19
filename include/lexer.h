@@ -39,4 +39,6 @@ char	*ft_strndup(char const *s1, size_t n);
 void print_commands(t_list *commands);
 t_list	*tokenizer(char *input);
 t_node	*parser(t_list *tokens);
+int     do_heredoc(char *str);
+
 #endif

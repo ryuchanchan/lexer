@@ -4,71 +4,61 @@
 #include <readline/readline.h>
 #include <stdbool.h>
 
-void print_filenames(t_list *filenames, int *fdout)
+void redirect_input(t_list *filenames, int *fdin)
 {
-    int fd_pipe[2];
-    t_redirection *redirection;
+    int             fd;
+    t_redirection   *redirection;
 
-    // printf("    filenames: \n");
     while (filenames != NULL)
     {
         redirection = (t_redirection *)filenames->content;
-        // printf("        type: ");
         if (redirection->type == INPUT)
+            fd = open((char *)redirection->filename, O_RDONLY);
+        else if (redirection->type == HEREDOC_INPUT)
+            fd = do_heredoc(redirection->filename);
+        else
         {
-            int fd = open((char *)redirection->filename, O_RDONLY);
-            if (fd == -1)
-            {
-                printf("minishell: %s: No such file or directory\n", (char *)redirection->filename);
-                break ;
-            }
-            // printf("INPUT");
+            filenames = filenames->next;
+            continue ;
         }
+        if (fd < 0)
+            perror("minishell");
+        else
+        {
+            close(*fdin);
+            *fdin = fd;
+        }
+        filenames = filenames->next;
+    }
+}
+
+void redirect_output(t_list *filenames, int *fdout)
+{
+    int             fd;
+    t_redirection   *redirection;
+
+    while (filenames != NULL)
+    {
+        redirection = (t_redirection *)filenames->content;
         if (redirection->type == OUTPUT)
         {
-            int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
-            //fdoutの中身を変える
-            close(*fdout);
-            *fdout = fd;
-            // printf("OUTPUT");
+            fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
         }
-        if (redirection->type == APPEND_OUTPUT)
+        else if (redirection->type == APPEND_OUTPUT)
+            fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_APPEND, 0777);
+        else
         {
-            int fd = open((char *)redirection->filename, O_RDWR|O_APPEND|O_CREAT, 0777);
-            close(*fdout);
-            *fdout = fd;
-            // printf("APPEND_OUTPUT");
+            filenames = filenames->next;
+            continue ;
         }
-        if (redirection->type == HEREDOC_INPUT)
+        if (fd < 0)
+            perror("minishell");
+        else
         {
-            int fd = open((char *)redirection->filename, O_RDONLY);
             close(*fdout);
             *fdout = fd;
-            pipe(&fd_pipe[2]);
-            while (*fdout)
-            {
-                if (fd_pipe[1])
-                {
-                    write(fd_pipe[1], fdout, 1);
-                }
-            }
-            dup2(fd_pipe[0], 0);
-            printf("HEREDOC_INPUT");
         }
-        // printf("\n");
-        // printf("        filename: %s\n", (char *)redirection->filename);
-        // printf("%s\n", (char *)redirection->filename);
         filenames = filenames->next;
-        // int fd = open((char *)redirection->filename, O_RDWR|O_CREAT|O_TRUNC, 0777);
-        // if (fd == -1)
-        // {
-        //     perror("open");
-        //     break ;
-        // }
-        //fdoutの中身を変える
-        // close(*fdout);
-        // *fdout = fd;
-        // dup2(fd, 1);
     }
 }
 
@@ -111,7 +101,7 @@ int main()
     // char *input = "/bin/cat sample > test1";
     // char *input = "/bin/cat sample >> test1";//この場合open()のflagをappend
     // char *input = "/bin/cat sample < test1";//読み込み専用O_RDONLY エラー処理
-    char *input = "/bin/cat << EOF";
+    char *input = "/bin/cat <<EOF >>sample_copy.txt";
 
     // char *input = "/bin/cat sample < test1 | /bin/cat sample > test1";//読み込み失敗してファイル書き込む
 
@@ -167,6 +157,7 @@ int main()
     {
         t_list *commands = node->commands;
         /* Todo:fdinを入力リダイレクション(< or <<)で上書きする処理 */
+        redirect_input(node->filenames, &fdin);
         dup2(fdin, 0);
         close(fdin);
         if (node->next != NULL)
@@ -178,12 +169,13 @@ int main()
             fdout = dup(tmpout);
         }
         /* Todo:fdoutを出力リダイレクション(> or >>)で上書きする処理 */
-        print_filenames(node->filenames, &fdout);
+       redirect_output(node->filenames, &fdout);
         // print_commands(node->commands);
         dup2(fdout, 1);
         close(fdout);
         
         char **arr = list_to_array(commands);
+        printf("before execve\n");
         pid.pids = fork();
         if (pid.pids == 0)
         {
